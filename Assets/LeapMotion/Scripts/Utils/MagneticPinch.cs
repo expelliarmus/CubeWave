@@ -51,27 +51,29 @@ public class MagneticPinch : MonoBehaviour {
     bool trigger_pinch = false;
     Hand hand = GetComponent<HandModel>().GetLeapHand();
 
-    // Thumb tip is the pinch position.
-    Vector3 thumb_tip = hand.Fingers[0].TipPosition.ToUnityScaled();
+    if (hand == null)
+      return;
 
-    // Scale trigger distance by thumb length
-    Vector3 thumb_direction = thumb_tip - hand.Fingers[0].JointPosition(Finger.FingerJoint.JOINT_PIP).ToUnityScaled();
-    float trigger_distance = thumb_direction.magnitude * TRIGGER_DISTANCE_RATIO;
+    // Thumb tip is the pinch position.
+    Vector leap_thumb_tip = hand.Fingers[0].TipPosition;
+
+    // Scale trigger distance by thumb proximal bone length.
+    float proximal_length = hand.Fingers[0].Bone(Bone.BoneType.TYPE_PROXIMAL).Length;
+    float trigger_distance = proximal_length * TRIGGER_DISTANCE_RATIO;
 
     // Check thumb tip distance to joints on all other fingers.
     // If it's close enough, start pinching.
     for (int i = 1; i < HandModel.NUM_FINGERS && !trigger_pinch; ++i) {
       Finger finger = hand.Fingers[i];
 
-      for (int j = 0; j < FingerModel.NUM_JOINTS && !trigger_pinch; ++j) {
-        Vector3 joint_position = finger.JointPosition((Finger.FingerJoint)(j)).ToUnityScaled();
-        Vector3 distance = thumb_tip - joint_position;
-        if (distance.magnitude < trigger_distance)
+      for (int j = 0; j < FingerModel.NUM_BONES && !trigger_pinch; ++j) {
+        Vector leap_joint_position = finger.Bone((Bone.BoneType)j).NextJoint;
+        if (leap_joint_position.DistanceTo(leap_thumb_tip) < trigger_distance)
           trigger_pinch = true;
       }
     }
 
-    Vector3 pinch_position = transform.TransformPoint(thumb_tip);
+    Vector3 pinch_position = transform.TransformPoint(leap_thumb_tip.ToUnityScaled());
 
     // Only change state if it's different.
     if (trigger_pinch && !pinching_)

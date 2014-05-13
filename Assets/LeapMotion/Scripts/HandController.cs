@@ -23,10 +23,15 @@ public class HandController : MonoBehaviour {
   private Dictionary<int, HandModel> graphics_hands_;
   private Dictionary<int, HandModel> physics_hands_;
 
-  void Start () {
+  void Start() {
     leap_controller_ = new Controller();
     graphics_hands_ = new Dictionary<int, HandModel>();
     physics_hands_ = new Dictionary<int, HandModel>();
+
+    if (leap_controller_ == null) {
+      Debug.LogWarning(
+          "Cannot connect to controller. Make sure you have Leap Motion v2.0+ installed");
+    }
   }
 
   private void IgnoreHandCollisions(HandModel hand) {
@@ -95,11 +100,17 @@ public class HandController : MonoBehaviour {
   }
 
   void Update() {
+    if (leap_controller_ == null)
+      return;
+
     Frame frame = leap_controller_.Frame();
     UpdateModels(graphics_hands_, frame.Hands, leftGraphicsModel, rightGraphicsModel);
   }
 
-  void FixedUpdate () {
+  void FixedUpdate() {
+    if (leap_controller_ == null)
+      return;
+
     Frame frame = leap_controller_.Frame();
     UpdateModels(physics_hands_, frame.Hands, leftPhysicsModel, rightPhysicsModel);
   }
